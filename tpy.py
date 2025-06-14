@@ -339,9 +339,9 @@ def clear_screen():
 def print_banner():
     banner = f"""
 {Colors.BOLD}{Colors.CYAN}╔══════════════════════════════════════════════════════════════╗
-║                   TOOL TDS AUTO (CLEAN CODE)                  ║
-║                  Coded by: Hoàng Dev & Gemini                 ║
-║                     Version: 2.3.0 (Logic Fix)                       ║
+║                   TOOL TDS AUTO                              ║
+║                  Coded by: Hoàng Dev                         ║
+║                     Version: 2.3.0                           ║
 ╚══════════════════════════════════════════════════════════════╝{Colors.RESET}
 """
     print(banner)
