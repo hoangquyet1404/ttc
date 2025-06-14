@@ -145,214 +145,100 @@ class FacebookInteractor:
 
         post_id = self._get_post_id(task_id)
         feedback_id = base64.b64encode(f"feedback:{post_id}".encode()).decode()
-        session_id = str(uuid.uuid4())
-        timestamp = int(time.time())
-        
-        headers = {
-            'accept': '*/*',
-            'accept-language': 'en-US,en;q=0.9',
-            'content-type': 'application/x-www-form-urlencoded',
-            'cookie': self.account.cookie,  # Fixed: Use account's cookie instead of self.cookie
-            'origin': 'https://www.facebook.com',
-            'priority': 'u=1, i',
-            'referer': f'https://www.facebook.com/{post_id}',
-            'sec-ch-ua': '"Brave";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
-            'sec-ch-ua-full-version-list': '"Brave";v="137.0.0.0", "Chromium";v="137.0.0.0", "Not/A)Brand";v="24.0.0.0"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-model': '""',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-ch-ua-platform-version': '"15.0.0"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-origin',
-            'sec-gpc': '1',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
-            'x-asbd-id': '359341',
-            'x-fb-friendly-name': 'CometUFIFeedbackReactMutation',
-            'x-fb-lsd': 'B1WQK7w_xB4eZAOvgT-tR-'
-        }
 
+        headers = self.headers.copy()
+        headers.update({
+            'referer': 'https://www.facebook.com/',
+            'x-fb-friendly-name': 'CometUFIFeedbackReactMutation',
+        })
+
+        attribution_id = f"CometHomeRoot.react,comet.home,tap_tabbar,{int(time.time()*1000)},594426,4748854339,,"
+        
         variables = {
             "input": {
-                "attribution_id_v2": f"CometSinglePostDialogRoot.react,comet.post.single_dialog,via_cold_start,{timestamp}047,919959,,,",
+                "attribution_id_v2": attribution_id,
                 "feedback_id": feedback_id,
                 "feedback_reaction_id": reaction_id,
-                "feedback_source": "OBJECT",
+                "feedback_source": "NEWS_FEED",
+                "feedback_referrer": "/",
                 "is_tracking_encrypted": True,
                 "tracking": None,
-                "session_id": session_id,
+                "session_id": str(uuid.uuid4()),
                 "actor_id": self.account.uid,
-                "client_mutation_id": "1",
-                "downstream_share_session_id": str(uuid.uuid4()),
-                "downstream_share_session_origin_uri": f"https://www.facebook.com/{post_id}",
-                "downstream_share_session_start_time": f"{timestamp}768"
+                "client_mutation_id": str(random.randint(1, 10))
             },
             "useDefaultActor": False,
             "__relay_internal__pv__CometUFIReactionsEnableShortNamerelayprovider": False
         }
 
+        lsd_val = "Kz8mR1dbHSzVWd4U41Tg_e"
+        
         data = {
             "av": self.account.uid,
-            "__aaid": "0",
             "__user": self.account.uid,
-            "__a": "1", 
-            "__req": "1i",
+            "__a": "1",
+            "__req": "2h",
             "__hs": "20253.HYP:comet_pkg.2.1...0",
             "dpr": "1",
             "__ccg": "EXCELLENT",
-            "__rev": "1023850259",
-            "__s": "py7mo6:771bv2:5ra0tq",
-            "__hsi": "7515788684770810449",
+            "__rev": "1023849647",
+            "__s": "k54qqm:771bv2:j6o3ye",
+            "__hsi": "7515765884117733295",
+            "__dyn": "7xeUjGU9k9wxxt0koC8G6Ejh941twWwIxu13wFG3OubyQdwSAx-bwNwnof8boG4E762S1DwUx60xU8E5O0BU2_CxS320qa2OU7m2210wEwgo9oO0wE7u12wOx62G5Usw9m1cwLwBgK7o8o4u0Mo4G1hx-3m1mzXw8W58jwGzEjzFU5e7oqBwJK14xm3y3aexfxmu3W3jU8o4qum7-2K0SEuwLyEbUGdG0HE88cA0z8c84p1e4UK2K2WEjxK2B08-269wkopg6C13xecwBwWzUfHDzUiBG2OUqwjVqwLwHwGwto461wwVwe23a",
+            "__csr": "g4B1Rk21sbNIdcOfkaP8l9R9tFht9jONQBii9bKx2-Httb9dbsWllRl8RmRRJsxmyQOEAlfZFSmGCUCHmRXtmBgyiAJPnluAFd5BFn9HztRrz4_AQiSL8RWlztTDnFbyaGBDVmiJ4BAjaLmilnCVqhVmF4mEz-BGAF4GyFfGmEyt5zoB6ABZ3bjpoyUiXAGdKm8GmDAKLASHzAl2QbFdOaVFoyuEkHADCyAQFaG5FuqumLHiWGmbUjG4UCqm9nmiulAiBBU-VQfDGWX-qimGgy9DWy8mxFQbQryKbBDCy8yFpeh928OC5A5-9iG8VoyUCFWy9KFENDgsDQFLyUGdIxby9Vaz8ggK2GnwCz8uUJt5V9aDzUCeyp8G2Kfl8x_y4AmidwGyGBz9EGqcCF0wU8odFVGwwxy78pDx16QRx2dwkolg20F5AGbwPhaxW1Ag98jQqmV9Uryo8p61awxwWxd0mo8o6-ey86G6pBwyAgN4ypE823UsGKyVqDoW2Wawj8GQ642qayoK7UCi9yAU2dwXyo2rU9o2vwWwOxqdxq1oAwBhix254A7em268oJt78uGg28xKU2HxO4WxyjwywKxAFU-1uG325oaEbS22261exq2ThSexzgyaz-PwTwCz8bpEshUuwWy8Xwjopguwhd0oE8od8B7xK3l0KgkjhF9agR1y9U4mayoWey8666UaE8Ejz8yqEgyU29y-ta4qy9FoAHxmEbWuC5EKmBojwlu68y1cVmmaGEjU2Rwm87mi74y3Tw-xO18F3U3dyo9E0Qe17m1Ga04Oo0yS02dq1vzA0To3IoR17wZgy9xVw1FuA04xU4-m7U06EOx4iEmxC0buw1ei0nq02dG0a1w3f83hG1UxGt38aU35o2Yw4ugfEO0KU3yDgcE2Pw9u0ouzTwfepwBw38U9CEkgnwXw8S0mS260KE2WwgUcE0CiU3qxa2S8CU2NwR4Ux2Uy0zE8U20Ao3dwsU5K5S0lYEcpA0sC0a8w6Se3G6o4y0tS0qiu3yAi362B0Roiwci3u1gEjEk86GAf9ic2G0EQ6Ub8G2aiew824o5Lg2vgdEjzQ7d4AjoC1FwJHwFwbG0W6_49yE3-Ag7V9eC4E3iwZg5S04Up2G0vi3mu0g20BUydxrGU4m4205Vzo1bXQ06dE1IU30qxi42z8bo4F45m8wHgboho1JE2hwgA0VUbUog0gg804vVim0GouwaZ04kw4OxRk0gilw",
+      
             "__comet_req": "15",
             "fb_dtsg": self.account.fb_dtsg,
-            "jazoest": "25241",
-            "lsd": "B1WQK7w_xB4eZAOvgT-tR-",
-            "__spin_r": "1023850259",
+            "jazoest": "25378",
+            "lsd": lsd_val,
+            "__spin_r": "1023849647",
             "__spin_b": "trunk",
-            "__spin_t": str(timestamp),
+            "__spin_t": str(int(time.time())),
             "fb_api_caller_class": "RelayModern",
             "fb_api_req_friendly_name": "CometUFIFeedbackReactMutation",
             "variables": json.dumps(variables),
             "server_timestamps": "true",
             "doc_id": "9518016021660044"
         }
-
+        
         try:
             response = requests.post("https://www.facebook.com/api/graphql/", headers=headers, data=data)
             response_json = response.json()
             
-            if response.ok and 'data' in response_json and response_json['data'].get('feedback_react'):
-                print(f"{Colors.GREEN}{reaction_name.upper()} reaction thành công!{Colors.RESET}")
-                return True
-            else:
-                print(f"{Colors.RED}{reaction_name.upper()} reaction thất bại.")
-                print(f"Status Code: {response.status_code}")
-                print(f"Response: {response.text[:200]}{Colors.RESET}")
-                return False
+            if response.ok:
+                if response_json.get('data', {}).get('feedback_react') is None:
+                    print(f"{Colors.RED}Không thể reaction - Bài viết không tồn tại hoặc bị chặn.{Colors.RESET}")
+                    return False
+                elif 'errors' in response_json:
+                    print(f"{Colors.RED}Lỗi khi reaction: {response_json['errors'][0].get('message', 'Unknown error')}{Colors.RESET}")
+                    return False
+                else:
+                    print(f"{Colors.GREEN}{reaction_name.upper()} reaction thành công!{Colors.RESET}")
+                    return True
+                    
+            #print(f"{Colors.RED}Reaction thất bại. Status code: {response.status_code}{Colors.RESET}")
+            return False
                 
         except requests.RequestException as e:
             print(f"{Colors.RED}Lỗi kết nối khi thực hiện reaction: {e}{Colors.RESET}")
             return False
 
     def follow_user(self, target_id):
-        """Gửi lời mời kết bạn, nếu không được thì chuyển sang theo dõi."""
-        timestamp = int(time.time())
-        session_id = str(uuid.uuid4())
-
-        # Common headers for both requests
-        headers = {
-            'accept': '*/*',
-            'accept-language': 'en-US,en;q=0.9',
-            'content-type': 'application/x-www-form-urlencoded',
-            'cookie': self.account.cookie,
-            'origin': 'https://www.facebook.com',
-            'priority': 'u=1, i',
-            'referer': f'https://www.facebook.com/profile.php?id={target_id}',
-            'sec-ch-ua': '"Brave";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
-            'sec-ch-ua-full-version-list': '"Brave";v="137.0.0.0", "Chromium";v="137.0.0.0", "Not/A)Brand";v="24.0.0.0"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-model': '""',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-ch-ua-platform-version': '"15.0.0"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-origin',
-            'sec-gpc': '1',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
-            'x-asbd-id': '359341',
-            'x-fb-lsd': 'luH3GY4liovr25K3-Kmxnz'
+        variables = {
+            "input": { "friend_requestee_ids": [target_id], "friending_channel": "PROFILE_BUTTON", "actor_id": self.account.uid }
         }
-
+        headers = self.headers.copy()
+        headers.update({'x-fb-friendly-name': 'FriendingCometFriendRequestSendMutation'})
+        data = { "av": self.account.uid, "__user": self.account.uid, "fb_dtsg": self.account.fb_dtsg, "doc_id": "9088602351172612", "variables": json.dumps(variables) }
         try:
-            # Try sending friend request first
-            friend_headers = headers.copy()
-            friend_headers.update({'x-fb-friendly-name': 'FriendingCometFriendRequestSendMutation'})
-            
-            friend_variables = {
-                "input": {
-                    "attribution_id_v2": f"ProfileCometContextualProfileRoot.react,comet.profile.contextual_profile,unexpected,{timestamp}710,151967,,,",
-                    "friend_requestee_ids": [target_id],
-                    "friending_channel": "PROFILE_BUTTON",
-                    "warn_ack_for_ids": [],
-                    "actor_id": self.account.uid,
-                    "client_mutation_id": "7"
-                },
-                "scale": 1
-            }
-
-            friend_data = {
-                "av": self.account.uid,
-                "__user": self.account.uid,
-                "__a": "1",
-                "fb_dtsg": self.account.fb_dtsg,
-                "variables": json.dumps(friend_variables),
-                "doc_id": "9757269034400464"
-            }
-
-            friend_response = requests.post(
-                "https://www.facebook.com/api/graphql/",
-                headers=friend_headers,
-                data=friend_data
-            )
-
-            # Check friend request response
-            if friend_response.ok:
-                friend_data = friend_response.json() if "application/json" in friend_response.headers.get('content-type', '').lower() else {}
-                if not friend_data.get('errors'):
-                    print(f"{Colors.GREEN}Đã gửi lời mời kết bạn thành công!{Colors.RESET}")
-                    return True
-
-            # If friend request fails or returns errors, try following
-            print(f"{Colors.YELLOW}Chuyển sang thử theo dõi...{Colors.RESET}")
-            
-            follow_headers = headers.copy()
-            follow_headers.update({'x-fb-friendly-name': 'CometUserFollowMutation'})
-
-            follow_variables = {
-                "input": {
-                    "attribution_id_v2": f"ProfileCometTimelineListViewRoot.react,comet.profile.timeline.list,unexpected,{timestamp}313,397001,250100865708545,,",
-                    "is_tracking_encrypted": False,
-                    "subscribe_location": "PROFILE",
-                    "subscribee_id": target_id,
-                    "tracking": None,
-                    "actor_id": self.account.uid,
-                    "client_mutation_id": "11",
-                    "session_id": session_id
-                },
-                "scale": 1
-            }
-
-            follow_data = {
-                "av": self.account.uid,
-                "__user": self.account.uid,
-                "__a": "1",
-                "fb_dtsg": self.account.fb_dtsg,
-                "variables": json.dumps(follow_variables),
-                "doc_id": "9831187040342850"
-            }
-
-            follow_response = requests.post(
-                "https://www.facebook.com/api/graphql/",
-                headers=follow_headers,
-                data=follow_data
-            )
-
-            # Check follow response
-            if follow_response.ok:
-                follow_data = follow_response.json() if "application/json" in follow_response.headers.get('content-type', '').lower() else {}
-                if not follow_data.get('errors'):
-                    print(f"{Colors.GREEN}Đã theo dõi thành công!{Colors.RESET}")
-                    return True
-                else:
-                    print(f"{Colors.RED}Không thể theo dõi. Lỗi: {follow_data.get('errors', ['Unknown error'])[0].get('message', 'Unknown error')}{Colors.RESET}")
-            else:
-                print(f"{Colors.RED}Không thể theo dõi. Status code: {follow_response.status_code}{Colors.RESET}")
-
-            return False
-
+            response = requests.post("https://www.facebook.com/api/graphql/", headers=headers, data=data)
+            if response and response.ok and 'errors' not in response.text:
+                print(f"{Colors.GREEN}Đã gửi lời mời kết bạn/theo dõi thành công!{Colors.RESET}")
+                return True
         except requests.RequestException as e:
-            print(f"{Colors.RED}Lỗi kết nối: {e}{Colors.RESET}")
-            return False
+            print(f"{Colors.RED}Lỗi kết nối khi follow: {e}{Colors.RESET}")
+        print(f"{Colors.RED}Follow thất bại.{Colors.RESET}")
+        return False
 
     def like_page(self, page_id):
         headers = self.headers.copy()
@@ -369,141 +255,11 @@ class FacebookInteractor:
         print(f"{Colors.RED}Like page thất bại. Response: {response.text[:200]}{Colors.RESET}")
         return False
 
-    def share_post(self, task_id):
-        """Thực hiện share bài viết theo API mới."""
-        if '_' in task_id:
-            post_id = task_id.split('_')[1]
-        else:
-            post_id = task_id
-            
-        current_time = int(time.time())
-        
-        headers = {
-            "accept": "*/*",
-            "accept-encoding": "gzip, deflate, br, zstd",
-            "accept-language": "vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5",
-            "content-type": "application/x-www-form-urlencoded",
-            "cookie": self.account.cookie,
-            "origin": "https://www.facebook.com",
-            "priority": "u=1, i",
-            "referer": "https://www.facebook.com/",
-            "sec-ch-prefers-color-scheme": "light",
-            "sec-ch-ua": '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
-            "sec-ch-ua-full-version-list": '"Chromium";v="130.0.6723.92", "Google Chrome";v="130.0.6723.92", "Not?A_Brand";v="99.0.0.0"',
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-model": '""',
-            "sec-ch-ua-platform": '"Windows"',
-            "sec-ch-ua-platform-version": '"15.0.0"',
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-origin",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-            "x-asbd-id": "129477",
-            "x-fb-friendly-name": "ComposerStoryCreateMutation",
-            "x-fb-lsd": "5tO9O8jtvQL-ScTarvAksW"
-        }
-
-        data = {
-            "av": self.account.uid,
-            "__aaid": "0",
-            "__user": self.account.uid,
-            "__a": "1",
-            "__req": "33",
-            "__hs": "20029.HYP:comet_pkg.2.1..2.1",
-            "dpr": "1",
-            "__ccg": "EXCELLENT",
-            "__rev": "1017900723",
-            "__s": "gqlros:g7edou:5h0uzz",
-            "__hsi": "7432747778109978897",
-            "__dyn": "7AzHK4HwBgDx-5Q1hyoyEqxd4Ag5S3G2O5U4e2C3-4UKewSAx-bwNwnof8boG4E762S1DwUx60xU8k1sw9u0LVEtwMw65xO2OU7m2210wEwgo9oO0wE7u12wOx62G5Usw9m1cwLwBgK7o8o4u0Mo4G1hx-3m1mzXw8W58jwGzEjzFU5e7oqBwJK14xm3y3aexfxmu3W3y2616DBx_wHwoE7u7EbXCwLyESE2KwwwOg2cwMwhA4UjyUaUcojxK2B0LwnU8oC1hxB0qo4e4UcEeE-3WVU-4EdrxG1fBG2-2K0UEmw",
-            "__comet_req": "15",
-            "fb_dtsg": self.account.fb_dtsg,
-            "jazoest": "25217",
-            "lsd": "5tO9O8jtvQL-ScTarvAksW",
-            "__spin_r": "1017900723",
-            "__spin_b": "trunk",
-            "__spin_t": str(current_time),
-            "fb_api_caller_class": "RelayModern",
-            "fb_api_req_friendly_name": "ComposerStoryCreateMutation",
-            "variables": json.dumps({
-                "input": {
-                    "composer_entry_point": "share_modal",
-                    "composer_source_surface": "feed_story",
-                    "composer_type": "share",
-                    "idempotence_token": str(uuid.uuid4()) + "_FEED",
-                    "source": "WWW",
-                    "attachments": [{
-                        "link": {
-                            "share_scrape_data": json.dumps({
-                                "share_type": 22,
-                                "share_params": [post_id]
-                            })
-                        }
-                    }],
-                    "reshare_original_post": "RESHARE_ORIGINAL_POST",
-                    "audience": {
-                        "privacy": {
-                            "allow": [],
-                            "base_state": "EVERYONE",
-                            "deny": [],
-                            "tag_expansion_state": "UNSPECIFIED"
-                        }
-                    },
-                    "message": {"ranges": [], "text": ""},
-                    "actor_id": self.account.uid,
-                    "client_mutation_id": "7"
-                },
-                "feedLocation": "NEWSFEED",
-                "focusCommentID": None,
-                "scale": 1,
-                "privacySelectorRenderLocation": "COMET_STREAM",
-                "renderLocation": "homepage_stream",
-                "useDefaultActor": False,
-                "isFeed": True
-            }),
-            "server_timestamps": True,
-            "doc_id": "9502543119760740"
-        }
-
-        try:
-            response = requests.post(
-                "https://www.facebook.com/api/graphql/",
-                headers=headers,
-                data=data
-            )
-            
-            try:
-                # Try to parse first line of response as JSON
-                first_line = response.text.split('\n')[0]
-                response_json = json.loads(first_line)
-                
-                if response.ok and response_json.get('data', {}).get('story_create'):
-                    #print(f"{Colors.GREEN}Share bài viết thành công!{Colors.RESET}")
-                    return True
-            except (json.JSONDecodeError, IndexError):
-                pass
-                
-            print(f"{Colors.RED}Share thất bại. Status code: {response.status_code}{Colors.RESET}")
-            return False
-                
-        except requests.RequestException as e:
-            print(f"{Colors.RED}Lỗi kết nối khi share: {e}{Colors.RESET}")
-            return False
-
 class TDSClient:
     """Tương tác với API của TraoDoiSub.com (lấy job, nhận xu,...)."""
     def __init__(self, token):
         self.token = token
         self.cache_counters = {"facebook_follow_cache": 0, "facebook_page_cache": 0}
-        # Map task types to their corresponding reward claim types
-        self.claim_type_map = {
-            "facebook_reaction": "facebook_reaction",
-            "facebook_reaction2": "facebook_reaction2", 
-            "facebook_reactioncmt": "facebook_reactioncmt",
-            "facebook_share": "facebook_share",
-            "facebook_follow": "facebook_follow",
-            "facebook_page": "facebook_page"
-        }
 
     def get_job_list(self, task_type):
         url = f"{TDS_FIELDS_URL}{task_type}&access_token={self.token}"
@@ -520,31 +276,15 @@ class TDSClient:
             return []
 
     def _submit_for_reward(self, job_id, task_type):
-        """Gửi yêu cầu nhận xu hoặc duyệt cho một nhiệm vụ."""
-        
-        # Xử lý các trường hợp khác nhau cho job_id
-        if task_type in ["facebook_follow", "facebook_page"]:
-            # Khi nhận xu hàng loạt sau khi đủ cache
-            claim_id = "facebook_api"
-        elif task_type.endswith('_cache'):
-            claim_id = job_id
-        else:
-            claim_id = job_id
-
-        url = f"{TDS_COIN_URL}{task_type}&id={claim_id}&access_token={self.token}"
-        
+        """Gửi yêu cầu nhận xu hoặc duyệt cho một nhiệm vụ và in ra response."""
+        url = f"{TDS_COIN_URL}{task_type}&id={job_id}&access_token={self.token}"
         try:
-            # print(f"{Colors.PURPLE}[DEBUG TDS] Submitting request:")
-            # print(f"URL: {url}")
-            # print(f"Type: {task_type}")
-            # print(f"ID/Code: {claim_id}{Colors.RESET}")
-            
             response = requests.get(url)
-            # print(f"{Colors.PURPLE}[DEBUG TDS] Response Status: {response.status_code}")
-            # print(f"[DEBUG TDS] Response Text: {response.text}{Colors.RESET}")
+            # print(f"{Colors.PURPLE}[DEBUG TDS] URL: {url}{Colors.RESET}")
+            # print(f"{Colors.PURPLE}[DEBUG TDS] Response Status: {response.status_code}{Colors.RESET}")
+            # print(f"{Colors.PURPLE}[DEBUG TDS] Response Text: {response.text}{Colors.RESET}")
             response.raise_for_status()
             return response.json()
-            
         except requests.RequestException as e:
             print(f"{Colors.RED}Lỗi kết nối khi gửi yêu cầu nhận xu: {e}{Colors.RESET}")
             return {"error": f"Request Error: {e}"}
@@ -553,32 +293,22 @@ class TDSClient:
             return {"error": "Invalid JSON response from TDS server"}
 
     def claim_reward(self, job_id, task_type):
-        """Nhận xu cho nhiệm vụ đã hoàn thành."""
-        if task_type not in self.claim_type_map:
-            print(f"{Colors.RED}Loại nhiệm vụ không hợp lệ: {task_type}{Colors.RESET}")
+        print(f"{Colors.YELLOW}Đang nhận xu cho Job ID: {job_id} (Type: {task_type}){Colors.RESET}")
+        result = self._submit_for_reward(job_id, task_type)
+        if result and "data" in result and result["data"].get("msg"):
+            print(f"{Colors.GREEN}Thành công: {result['data']['msg']}{Colors.RESET}")
+            print(f"{Colors.CYAN}Xu hiện tại: {result['data']['xu']}{Colors.RESET}")
+            return True
+        else:
+            error_msg = result.get('error', 'Lỗi không xác định từ TDS.')
+            print(f"{Colors.RED}Nhận xu thất bại: {error_msg}{Colors.RESET}")
             return False
-
-        claim_type = self.claim_type_map[task_type]
-        #print(f"{Colors.YELLOW}Đang nhận xu cho Job ID: {job_id} (Type: {claim_type}){Colors.RESET}")
-        result = self._submit_for_reward(job_id, claim_type)
-        
-        if result:
-            if "error" in result:
-                print(f"{Colors.RED}Nhận xu thất bại: {result['error']}{Colors.RESET}")
-                return False
-            elif "data" in result and result["data"].get("msg"):
-                print(f"{Colors.GREEN}Thành công: {result['data']['msg']}{Colors.RESET}")
-                print(f"{Colors.CYAN}Xu hiện tại: {result['data']['xu']}{Colors.RESET}")
-                return True
-            
-        return False
 
     def submit_for_review(self, job_id, task_type):
-        """Gửi nhiệm vụ vào hàng đợi duyệt và tự động nhận xu khi đủ."""
-        if task_type not in ["facebook_follow", "facebook_page"]:
-            print(f"{Colors.RED}Loại nhiệm vụ không hỗ trợ gửi duyệt: {task_type}{Colors.RESET}")
-            return False
-            
+        """
+        Gửi nhiệm vụ vào hàng đợi duyệt và tự động nhận xu khi đủ.
+        *** CẬP NHẬT: Sửa lỗi logic kiểm tra thành công ***
+        """
         review_type = f"{task_type}_cache"
         print(f"{Colors.YELLOW}Đang gửi duyệt Job ID: {job_id}{Colors.RESET}")
         result = self._submit_for_reward(job_id, review_type)
@@ -589,10 +319,8 @@ class TDSClient:
             print(f"{Colors.GREEN}Gửi duyệt thành công. Nhiệm vụ chờ duyệt ({task_type}): {current_cache_count}{Colors.RESET}")
             
             if current_cache_count >= 4:
-                print(f"{Colors.YELLOW}Đủ {current_cache_count} nhiệm vụ, đang nghỉ 3 giây trước khi nhận xu hàng loạt...{Colors.RESET}")
-                time.sleep(3)  # Delay trước khi nhận xu hàng loạt
-                # Gọi claim_reward với task_type gốc (không có _cache) và facebook_api làm ID
-                batch_claimed = self.claim_reward('facebook_api', task_type)  
+                print(f"{Colors.YELLOW}Đủ {current_cache_count} nhiệm vụ, đang nhận xu hàng loạt cho '{task_type}'...{Colors.RESET}")
+                batch_claimed = self.claim_reward(job_id, task_type)
                 if batch_claimed:
                     self.cache_counters[review_type] = 0
             return True
@@ -740,12 +468,8 @@ def run_jobs_for_account(tds_client: TDSClient, fb_account: FacebookAccount, tas
                     success = False
 
             elif task_type == "facebook_share":
-                success = fb_interactor.share_post(job_id)
-                if success:
-                    #print(f"{Colors.YELLOW}Đợi 2 giây trước khi nhận xu...{Colors.RESET}")
-                    time.sleep(2)  # Delay 2s before claiming reward
-                    tds_client.claim_reward(job_code, task_type)
-                    
+                print(f"{Colors.YELLOW}Nhiệm vụ Share tạm thời bỏ qua vì API Facebook phức tạp và thay đổi thường xuyên.{Colors.RESET}")
+
             elif task_type == "facebook_follow":
                 success = fb_interactor.follow_user(job_id)
                 if success:
