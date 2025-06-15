@@ -817,16 +817,54 @@ def process_share_job(job, interactor: FacebookInteractor, cookies, settings):
 # ==============================================================================
 # SECTION: UI & MAIN EXECUTION
 # ==============================================================================
-
+def get_random_color_scheme():
+    """Tạo bộ màu ngẫu nhiên hài hòa"""
+    color_schemes = [
+        # Gradient Ocean Blue
+        ['\033[38;5;33m', '\033[38;5;39m', '\033[38;5;45m', '\033[38;5;51m'],
+        # Gradient Sunset
+        ['\033[38;5;196m', '\033[38;5;202m', '\033[38;5;208m', '\033[38;5;214m'],
+        # Gradient Purple Pink
+        ['\033[38;5;129m', '\033[38;5;135m', '\033[38;5;141m', '\033[38;5;147m'],
+        # Gradient Green Forest
+        ['\033[38;5;22m', '\033[38;5;28m', '\033[38;5;34m', '\033[38;5;40m'],
+        # Gradient Fire
+        ['\033[38;5;124m', '\033[38;5;160m', '\033[38;5;196m', '\033[38;5;202m'],
+        # Gradient Neon
+        ['\033[38;5;46m', '\033[38;5;82m', '\033[38;5;118m', '\033[38;5;154m'],
+        # Gradient Royal
+        ['\033[38;5;54m', '\033[38;5;90m', '\033[38;5;126m', '\033[38;5;162m'],
+        # Gradient Cyber
+        ['\033[38;5;21m', '\033[38;5;27m', '\033[38;5;33m', '\033[38;5;39m'],
+        # Gradient Warm
+        ['\033[38;5;166m', '\033[38;5;172m', '\033[38;5;178m', '\033[38;5;184m'],
+        # Gradient Cool
+        ['\033[38;5;30m', '\033[38;5;36m', '\033[38;5;42m', '\033[38;5;48m']
+    ]
+    return random.choice(color_schemes)
 def print_banner():
-    """Prints the application banner."""
-    banner = f"""
-{_Bold_}{_Cyan_}╔══════════════════════════════════════════════════════════════╗
-║                   TOOL TTC AUTO BY HOANG DEV                  ║
-║                     Phiên bản: 1.2 (Updated)                   ║
-╚══════════════════════════════════════════════════════════════╝{_Reset_}
-"""
-    print(banner)
+    Fore, Back, Style = init_colors()
+    
+    # Clear screen
+    os.system('cls' if os.name == 'nt' else 'clear')
+    
+    # Get random color scheme
+    colors = get_random_color_scheme()
+    reset_color = '\033[0m'
+    
+    # H-TOOL ASCII Art with random gradient colors
+    print(f"""
+{colors[0]}██╗  ██╗      {colors[1]}████████╗ ██████╗  ██████╗ ██╗     
+{colors[0]}██║  ██║      {colors[1]}╚══██╔══╝██╔═══██╗██╔═══██╗██║     
+{colors[1]}███████║█████╗{colors[2]}   ██║   ██║   ██║██║   ██║██║     
+{colors[2]}██╔══██║╚════╝{colors[3]}   ██║   ██║   ██║██║   ██║██║     
+{colors[2]}██║  ██║      {colors[3]}   ██║   ╚██████╔╝╚██████╔╝███████╗
+{colors[3]}╚═╝  ╚═╝         ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝{reset_color}
+""")
+    copyright_colors = ['\033[38;5;220m', '\033[38;5;226m', '\033[38;5;214m', '\033[38;5;208m']
+    copyright_color = random.choice(copyright_colors)
+    print(f"{copyright_color}                Copyright © H-Tool 2025 | Version 4.0{reset_color}")
+    print()
 
 def print_section(title):
     """Prints a formatted section header."""
@@ -914,6 +952,31 @@ def load_cookies_from_input():
             print(f"{_Red_}Lỗi khi đọc file: {str(e)}{_Reset_}")
     
     return []
+def init_colors():
+    try:
+        from colorama import init, Fore, Back, Style
+        init(autoreset=True)
+        return Fore, Back, Style
+    except ImportError:
+        # Fallback to ANSI codes if colorama not available
+        class Colors:
+            RED = '\033[91m'
+            GREEN = '\033[92m'
+            YELLOW = '\033[93m'
+            BLUE = '\033[94m'
+            MAGENTA = '\033[95m'
+            CYAN = '\033[96m'
+            WHITE = '\033[97m'
+            ORANGE = '\033[38;5;208m'
+            BRIGHT_GREEN = '\033[38;5;46m'
+            BRIGHT_RED = '\033[38;5;196m'
+            BRIGHT_YELLOW = '\033[38;5;226m'
+            BRIGHT_CYAN = '\033[38;5;51m'
+            RESET = '\033[0m'
+            BOLD = '\033[1m'
+            DIM = '\033[2m'
+        
+        return Colors, None, Colors
 
 def main():
     """Main function to run the tool."""
