@@ -677,5 +677,89 @@ def main():
 
     print(f"{Colors.BOLD}{Colors.GREEN}Cảm ơn bạn đã sử dụng tool!{Colors.RESET}")
 
+# =========================================================================================
+# SECTION: CÁC HÀM XỬ LÝ NHIỆM VỤ (JOB PROCESSING FUNCTIONS)
+# =========================================================================================
+
+def run_jobs_for_account(tds_client: TDSClient, fb_account: FacebookAccount, task_types: list, time_settings: dict):
+    """
+    Thực hiện các nhiệm vụ cho một tài khoản Facebook cụ thể
+    """
+    fb_interactor = FacebookInteractor(fb_account)
+    jobs_completed = 0
+    find_job_attempts = 0
+    jobs_since_break = 0
+    
+    print(f"\n{Colors.PURPLE}--- Bắt đầu làm việc với tài khoản: {fb_account.name} ---{Colors.RESET}")
+
+    while find_job_attempts < time_settings['max_job_find']:
+        if jobs_since_break >= time_settings['jobs_until_break']:
+            print(f"\n{Colors.YELLOW}Đã hoàn thành {jobs_since_break} nhiệm vụ. Nghỉ {time_settings['break_time']} giây...{Colors.RESET}")
+            time.sleep(time_settings['break_time'])
+            jobs_since_break = 0
+
+        task_type = random.choice(task_types)
+        print(f"\n{Colors.WHITE}Đang tìm nhiệm vụ loại: {Colors.BOLD}{task_type}{Colors.RESET}")
+        
+        jobs = tds_client.get_job_list(task_type)
+
+        if not jobs:
+            find_job_attempts += 1
+            print(f"{Colors.YELLOW}Không có nhiệm vụ. Thử lại sau {time_settings['delay_find']}s (Lần {find_job_attempts}/{time_settings['max_job_find']}).{Colors.RESET}")
+            time.sleep(time_settings['delay_find'])
+            continue
+        
+        find_job_attempts = 0
+
+        for job in jobs:
+            if jobs_since_break >= time_settings['jobs_until_break']: 
+                break
+            
+            job_id = job['id']
+            job_code = job.get('code', job_id)
+            success = False
+            
+            print(f"\n{Colors.CYAN}--- Thực hiện Job ---")
+            print(f"Time: {datetime.now().strftime('%H:%M:%S')} | Account: {fb_account.name} | Type: {task_type} | ID: {job_id}{Colors.RESET}")
+
+            try:
+                if task_type == "facebook_reaction":
+                    reaction_type_from_job = job.get('type', 'LIKE').upper()
+                    if reaction_type_from_job in REACTION_IDS:
+                        print(f"{Colors.CYAN}--> Yêu cầu reaction: {reaction_type_from_job}{Colors.RESET}")
+                        success = fb_interactor._perform_reaction(job_id, reaction_type_from_job)
+                        if success:
+                            tds_client.claim_reward(job_code, task_type)
+                    else:
+                        print(f"{Colors.RED}Loại reaction không xác định: {reaction_type_from_job}{Colors.RESET}")
+
+                elif task_type == "facebook_share":
+                    print(f"{Colors.YELLOW}Nhiệm vụ Share tạm thời bỏ qua.{Colors.RESET}")
+                    continue
+
+                elif task_type == "facebook_follow":
+                    success = fb_interactor.follow_user(job_id)
+                    if success:
+                        tds_client.submit_for_review(job_code, task_type)
+
+                elif task_type == "facebook_page":
+                    success = fb_interactor.like_page(job_id)
+                    if success:
+                        tds_client.submit_for_review(job_code, task_type)
+
+                if success:
+                    jobs_completed += 1
+                    jobs_since_break += 1
+                    print(f"{Colors.BOLD}{Colors.GREEN}Tổng nhiệm vụ đã hoàn thành: {jobs_completed}{Colors.RESET}")
+
+            except Exception as e:
+                print(f"{Colors.RED}Lỗi khi thực hiện nhiệm vụ: {str(e)}{Colors.RESET}")
+                continue
+
+            print(f"{Colors.PURPLE}Delay {time_settings['delay_job']} giây trước nhiệm vụ tiếp theo...{Colors.RESET}")
+            time.sleep(time_settings['delay_job'])
+
+    print(f"\n{Colors.YELLOW}Đã hoàn thành cho tài khoản {fb_account.name}. Tổng số job: {jobs_completed}{Colors.RESET}")
+
 if __name__ == "__main__":
     main()
