@@ -450,114 +450,104 @@ def select_facebook_accounts(valid_accounts):
         except (ValueError, IndexError):
             print(f"{Colors.RED}Lựa chọn không hợp lệ. Vui lòng thử lại.{Colors.RESET}")
 
-# =========================================================================================
-# SECTION: LOGIC CHÍNH CỦA TOOL (MAIN TOOL LOGIC)
-# =========================================================================================
+def load_saved_accounts():
+    """Load saved accounts from accounttds.txt"""
+    try:
+        with open("accounttds.txt", "r", encoding="utf-8") as f:
+            accounts = [line.strip().split("|") for line in f if line.strip()]
+        return [(acc[0], acc[1]) for acc in accounts if len(acc) == 2]
+    except FileNotFoundError:
+        return []
 
-def run_jobs_for_account(tds_client: TDSClient, fb_account: FacebookAccount, task_types: list, time_settings: dict):
-    fb_interactor = FacebookInteractor(fb_account)
-    jobs_completed = 0
-    find_job_attempts = 0
-    jobs_since_break = 0
+def save_account(username, password):
+    """Save account credentials to accounttds.txt"""
+    with open("accounttds.txt", "a", encoding="utf-8") as f:
+        f.write(f"{username}|{password}\n")
+
+def select_login_method():
+    while True:
+        print(f"\n{Colors.YELLOW}╔══════════════════════════════════════╗")
+        print(f"║         ĐĂNG NHẬP TRAODOISUB         ║")
+        print(f"╚══════════════════════════════════════╝{Colors.RESET}")
+        print(f"{Colors.GREEN}1: Đăng nhập tài khoản mới")
+        print(f"2: Sử dụng tài khoản đã lưu{Colors.RESET}")
+        
+        choice = input(f"\n{Colors.BLUE}Nhập lựa chọn: {Colors.RESET}")
+        
+        if choice == "1":
+            return "new"
+        elif choice == "2":
+            saved_accounts = load_saved_accounts()
+            if not saved_accounts:
+                print(f"{Colors.RED}Không tìm thấy tài khoản nào được lưu trong accounttds.txt{Colors.RESET}")
+                continue
+            return "saved"
+        else:
+            print(f"{Colors.RED}Lựa chọn không hợp lệ. Vui lòng thử lại.{Colors.RESET}")
+
+def select_saved_account():
+    """Display and select from saved accounts"""
+    saved_accounts = load_saved_accounts()
+    if not saved_accounts:
+        return None, None
     
-    print_banner()
-    print(f"{Colors.PURPLE}--- Bắt đầu làm việc với tài khoản: {fb_account.name} ---{Colors.RESET}")
-
-    while find_job_attempts < time_settings['max_job_find']:
-        if jobs_since_break >= time_settings['jobs_until_break']:
-            print(f"\n{Colors.YELLOW}Đã hoàn thành {jobs_since_break} nhiệm vụ. Nghỉ {time_settings['break_time']} giây...{Colors.RESET}")
-            time.sleep(time_settings['break_time'])
-            jobs_since_break = 0
-
-        task_type = random.choice(task_types)
-        print(f"\n{Colors.WHITE}Đang tìm nhiệm vụ loại: {Colors.BOLD}{task_type}{Colors.RESET}")
-        
-        jobs = tds_client.get_job_list(task_type)
-
-        if not jobs:
-            find_job_attempts += 1
-            print(f"{Colors.YELLOW}Không có nhiệm vụ. Thử lại sau {time_settings['delay_find']}s (Lần {find_job_attempts}/{time_settings['max_job_find']}).{Colors.RESET}")
-            time.sleep(time_settings['delay_find'])
-            continue
-        
-        find_job_attempts = 0
-
-        for job in jobs:
-            if jobs_since_break >= time_settings['jobs_until_break']: break
-            
-            job_id = job['id']
-            job_code = job.get('code', job_id)
-            success = False
-            
-            print(f"\n{Colors.CYAN}--- Thực hiện Job ---")
-            print(f"Time: {datetime.now().strftime('%H:%M:%S')} | Account: {fb_account.name} | Type: {task_type} | ID: {job_id}{Colors.RESET}")
-
-            if task_type == "facebook_reaction":
-                # *** CẬP NHẬT: Tự động xác định loại reaction từ job ***
-                reaction_type_from_job = job.get('type', 'LIKE').upper()
-                
-                if reaction_type_from_job in REACTION_IDS:
-                    print(f"{Colors.CYAN}--> Yêu cầu reaction: {reaction_type_from_job}{Colors.RESET}")
-                    success = fb_interactor._perform_reaction(job_id, reaction_type_from_job)
-                    if success:
-                        tds_client.claim_reward(job_code, task_type)
-                else:
-                    print(f"{Colors.RED}Loại reaction không xác định từ job TDS: {reaction_type_from_job}{Colors.RESET}")
-                    success = False
-
-            elif task_type == "facebook_share":
-                print(f"{Colors.YELLOW}Nhiệm vụ Share tạm thời bỏ qua vì API Facebook phức tạp và thay đổi thường xuyên.{Colors.RESET}")
-
-            elif task_type == "facebook_follow":
-                success = fb_interactor.follow_user(job_id)
-                if success:
-                    tds_client.submit_for_review(job_code, task_type)
-            elif task_type == "facebook_page":
-                success = fb_interactor.like_page(job_id)
-                if success:
-                    tds_client.submit_for_review(job_code, task_type)
-            
-            if success:
-                jobs_completed += 1
-                jobs_since_break += 1
-                print(f"{Colors.BOLD}{Colors.GREEN}Tổng nhiệm vụ đã hoàn thành: {jobs_completed}{Colors.RESET}")
-
-            print(f"{Colors.PURPLE}Delay {time_settings['delay_job']} giây trước khi làm nhiệm vụ tiếp theo...{Colors.RESET}")
-            time.sleep(time_settings['delay_job'])
-
-    print(f"\n{Colors.YELLOW}Đã đạt giới hạn tìm kiếm hoặc hoàn thành. Tổng số job đã làm cho tài khoản {fb_account.name}: {jobs_completed}{Colors.RESET}")
+    print(f"\n{Colors.YELLOW}Danh sách tài khoản đã lưu:{Colors.RESET}")
+    for i, (username, _) in enumerate(saved_accounts, 1):
+        print(f"{Colors.GREEN}{i}. {username}{Colors.RESET}")
+    
+    while True:
+        try:
+            choice = int(input(f"\n{Colors.BLUE}Chọn tài khoản (1-{len(saved_accounts)}): {Colors.RESET}"))
+            if 1 <= choice <= len(saved_accounts):
+                return saved_accounts[choice-1]
+        except ValueError:
+            pass
+        print(f"{Colors.RED}Lựa chọn không hợp lệ. Vui lòng thử lại.{Colors.RESET}")
 
 def login_tds():
+    """Modified login function with account management"""
     url = "https://traodoisub.com/scr/login.php"
     headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"}
     
-    while True:
+    login_method = select_login_method()
+    
+    if login_method == "saved":
+        username, password = select_saved_account()
+        if not username or not password:
+            print(f"{Colors.RED}Không thể lấy thông tin tài khoản.{Colors.RESET}")
+            return None
+    else:  # new login
         username = input(f"{Colors.BLUE}Nhập Tài Khoản TDS: {Colors.RESET}")
         password = input(f"{Colors.WHITE}Nhập Mật Khẩu TDS: {Colors.RESET}")
-        data = {"username": username, "password": password}
-        
-        try:
-            response = requests.post(url, headers=headers, data=data)
-            response.raise_for_status()
-            result = response.json()
+    
+    try:
+        response = requests.post(url, headers=headers, data={"username": username, "password": password})
+        response.raise_for_status()
+        result = response.json()
 
-            if result.get("success"):
-                print(f"{Colors.GREEN}Đăng nhập TDS thành công!{Colors.RESET}")
-                
-                cookie_str = f"PHPSESSID={response.cookies.get('PHPSESSID')}"
-                info_url = "https://traodoisub.com/view/setting/load.php"
-                info_response = requests.post(info_url, headers={"Cookie": cookie_str})
-                info_data = info_response.json()
+        if result.get("success"):
+            print(f"{Colors.GREEN}Đăng nhập TDS thành công!{Colors.RESET}")
+            
+            # Save new account if using new login
+            if login_method == "new":
+                save_account(username, password)
+                print(f"{Colors.GREEN}Đã lưu tài khoản vào accounttds.txt{Colors.RESET}")
+            
+            cookie_str = f"PHPSESSID={response.cookies.get('PHPSESSID')}"
+            info_url = "https://traodoisub.com/view/setting/load.php"
+            info_response = requests.post(info_url, headers={"Cookie": cookie_str})
+            info_data = info_response.json()
 
-                if "tokentds" in info_data:
-                    print(f"{Colors.CYAN}User: {info_data.get('user', 'N/A')} | Xu: {info_data.get('xu', 'N/A')}{Colors.RESET}")
-                    return TDSClient(info_data['tokentds'])
-                else:
-                    print(f"{Colors.RED}Không thể lấy token TDS.{Colors.RESET}")
+            if "tokentds" in info_data:
+                print(f"{Colors.CYAN}User: {info_data.get('user', 'N/A')} | Xu: {info_data.get('xu', 'N/A')}{Colors.RESET}")
+                return TDSClient(info_data['tokentds'])
             else:
-                print(f"{Colors.RED}Đăng nhập thất bại: {result.get('error', 'Lỗi không xác định')}{Colors.RESET}")
-        except (requests.RequestException, json.JSONDecodeError) as e:
-            print(f"{Colors.RED}Lỗi khi đăng nhập TDS: {e}{Colors.RESET}")
+                print(f"{Colors.RED}Không thể lấy token TDS.{Colors.RESET}")
+        else:
+            print(f"{Colors.RED}Đăng nhập thất bại: {result.get('error', 'Lỗi không xác định')}{Colors.RESET}")
+    except (requests.RequestException, json.JSONDecodeError) as e:
+        print(f"{Colors.RED}Lỗi khi đăng nhập TDS: {e}{Colors.RESET}")
+    return None
 
 def manage_cookies():
     saved_cookies_file = "saved_cookies.txt"
