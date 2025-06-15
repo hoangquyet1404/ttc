@@ -213,7 +213,7 @@ class FacebookInteractor:
                     print(f"{Colors.RED}Lỗi khi reaction: {response_json['errors'][0].get('message', 'Unknown error')}{Colors.RESET}")
                     return False
                 else:
-                    print(f"{Colors.GREEN}{reaction_name.upper()} reaction thành công!{Colors.RESET}")
+                    #print(f"{Colors.GREEN}{reaction_name.upper()} reaction thành công!{Colors.RESET}")
                     return True
                     
             #print(f"{Colors.RED}Reaction thất bại. Status code: {response.status_code}{Colors.RESET}")
@@ -293,7 +293,7 @@ class TDSClient:
             return {"error": "Invalid JSON response from TDS server"}
 
     def claim_reward(self, job_id, task_type):
-        print(f"{Colors.YELLOW}Đang nhận xu cho Job ID: {job_id} (Type: {task_type}){Colors.RESET}")
+        #print(f"{Colors.YELLOW}Đang nhận xu cho Job ID: {job_id} (Type: {task_type}){Colors.RESET}")
         result = self._submit_for_reward(job_id, task_type)
         if result and "data" in result and result["data"].get("msg"):
             print(f"{Colors.GREEN}Thành công: {result['data']['msg']}{Colors.RESET}")
