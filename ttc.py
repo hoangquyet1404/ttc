@@ -776,18 +776,13 @@ def process_share_job(job, interactor: FacebookInteractor, cookies, settings):
         return (None, 2)
         
     try:
-        # Example link: https://www.facebook.com/61553295375328_122174426444109845
-        # or: https://facebook.com/xxx/posts/123456789
         link = job['link']
-        # First try to get post ID from underscore format
         try:
             post_id = link.split('facebook.com/')[1].split('_')[0]
         except:
-            # If that fails, try to get it from /posts/ format
             try:
                 post_id = link.split('/posts/')[1].split('?')[0].strip('/')
             except:
-                # If both fail, use the original idpost
                 post_id = job['idpost']
         
         if not post_id:
@@ -820,39 +815,23 @@ def process_share_job(job, interactor: FacebookInteractor, cookies, settings):
 def get_random_color_scheme():
     """Tạo bộ màu ngẫu nhiên hài hòa"""
     color_schemes = [
-        # Gradient Ocean Blue
         ['\033[38;5;33m', '\033[38;5;39m', '\033[38;5;45m', '\033[38;5;51m'],
-        # Gradient Sunset
         ['\033[38;5;196m', '\033[38;5;202m', '\033[38;5;208m', '\033[38;5;214m'],
-        # Gradient Purple Pink
         ['\033[38;5;129m', '\033[38;5;135m', '\033[38;5;141m', '\033[38;5;147m'],
-        # Gradient Green Forest
         ['\033[38;5;22m', '\033[38;5;28m', '\033[38;5;34m', '\033[38;5;40m'],
-        # Gradient Fire
         ['\033[38;5;124m', '\033[38;5;160m', '\033[38;5;196m', '\033[38;5;202m'],
-        # Gradient Neon
         ['\033[38;5;46m', '\033[38;5;82m', '\033[38;5;118m', '\033[38;5;154m'],
-        # Gradient Royal
         ['\033[38;5;54m', '\033[38;5;90m', '\033[38;5;126m', '\033[38;5;162m'],
-        # Gradient Cyber
         ['\033[38;5;21m', '\033[38;5;27m', '\033[38;5;33m', '\033[38;5;39m'],
-        # Gradient Warm
         ['\033[38;5;166m', '\033[38;5;172m', '\033[38;5;178m', '\033[38;5;184m'],
-        # Gradient Cool
         ['\033[38;5;30m', '\033[38;5;36m', '\033[38;5;42m', '\033[38;5;48m']
     ]
     return random.choice(color_schemes)
 def print_banner():
     Fore, Back, Style = init_colors()
-    
-    # Clear screen
     os.system('cls' if os.name == 'nt' else 'clear')
-    
-    # Get random color scheme
     colors = get_random_color_scheme()
     reset_color = '\033[0m'
-    
-    # H-TOOL ASCII Art with random gradient colors
     print(f"""
 {colors[0]}██╗  ██╗      {colors[1]}████████╗ ██████╗  ██████╗ ██╗     
 {colors[0]}██║  ██║      {colors[1]}╚══██╔══╝██╔═══██╗██╔═══██╗██║     
@@ -978,16 +957,78 @@ def init_colors():
         
         return Colors, None, Colors
 
+def load_saved_accounts():
+    """Loads saved TTC accounts from account.txt"""
+    accounts = []
+    try:
+        with open("account.txt", "r", encoding="utf-8") as f:
+            for line in f:
+                if '|' in line:
+                    username, password = line.strip().split('|')
+                    accounts.append({"username": username, "password": password})
+    except FileNotFoundError:
+        return []
+    return accounts
+
+def save_account(username, password):
+    """Saves TTC account credentials to account.txt"""
+    try:
+        with open("account.txt", "a", encoding="utf-8") as f:
+            f.write(f"{username}|{password}\n")
+        print(f"{_Green_}Đã lưu thông tin tài khoản vào account.txt{_Reset_}")
+    except Exception as e:
+        print(f"{_Red_}Lỗi khi lưu tài khoản: {str(e)}{_Reset_}")
+
+def select_saved_account():
+    """Allows user to select a saved TTC account"""
+    accounts = load_saved_accounts()
+    if not accounts:
+        print(f"{_Red_}Không tìm thấy tài khoản đã lưu trong account.txt{_Reset_}")
+        return None, None
+
+    print("\nDanh sách tài khoản đã lưu:")
+    for i, acc in enumerate(accounts, 1):
+        print(f"{i}. {acc['username']}")
+
+    try:
+        choice = int(input(f"\n{_Yellow_}Chọn tài khoản (1-{len(accounts)}): {_Reset_}"))
+        if 1 <= choice <= len(accounts):
+            selected = accounts[choice-1]
+            return selected["username"], selected["password"]
+    except (ValueError, IndexError):
+        print(f"{_Red_}Lựa chọn không hợp lệ{_Reset_}")
+    return None, None
+
+def ttc_login_menu():
+    """Displays TTC login menu and handles login process"""
+    print_section("Đăng nhập TuongTacCheo")
+    print("1. Đăng nhập tài khoản mới")
+    print("2. Sử dụng tài khoản đã lưu")
+    
+    choice = input(f"\n{_Yellow_}Lựa chọn của bạn (1-2): {_Reset_}")
+    
+    if choice == "1":
+        username = input(f"{_Yellow_}Nhập username TTC: {_Reset_}")
+        password = input(f"{_Yellow_}Nhập password TTC: {_Reset_}")
+        cookies = login_ttc(username, password)
+        if cookies:
+            save_account(username, password)
+            return cookies
+    elif choice == "2":
+        username, password = select_saved_account()
+        if username and password:
+            return login_ttc(username, password)
+    else:
+        print(f"{_Red_}Lựa chọn không hợp lệ{_Reset_}")
+    
+    return None
+
 def main():
     """Main function to run the tool."""
     print_banner()
     
-    # 1. Login to TTC
-    print_section("Đăng nhập TuongTacCheo")
-    username = input(f"{_Yellow_}Nhập username TTC: {_Reset_}")
-    password = input(f"{_Yellow_}Nhập password TTC: {_Reset_}")
-    
-    ttc_cookies = login_ttc(username, password)
+    # 1. Login to TTC using new menu
+    ttc_cookies = ttc_login_menu()
     if not ttc_cookies:
         print(f"{_Red_}Đăng nhập TTC thất bại. Vui lòng kiểm tra lại.{_Reset_}")
         return
